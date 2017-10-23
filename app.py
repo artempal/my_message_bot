@@ -4,6 +4,8 @@ import sys
 import re  
 import numpy as np
 from transliterate import translit, get_available_language_codes
+import pickle
+
 
 
 reload(sys)  
@@ -14,6 +16,8 @@ sys.setdefaultencoding('utf-8')
 DATA_FILE = 'data.txt'
 DICT_FILE = 'conversationDictionary.npy'
 CONSERV_FILE = 'conversationData.txt'
+WORD_LIST_FILE = 'wordList.txt'
+WINDOW_SIZE = 5
 REG_FILTER = re.compile(u'[^а-яА-Я ]') # фильтр сообщений - по умолчанию только русские символы и пробелы
 
 def vk_dataset():
@@ -122,7 +126,19 @@ def save_my_dict(trans_data):
    	conversationFile.write(key.strip() + value.strip())
     conversationFile.close()
 
+def gen_wordlist():
+    print 'Генерируем массив слов...'
 
-#vk_dataset()
+    openedFile = open(CONSERV_FILE, 'r') # открываем словарь
+    allLines = openedFile.readlines() 
+    myStr = ""
+    for line in allLines: # из всех строк делаем одну большую
+	    myStr += line	
+    allWords = myStr.split()# создаем массив слов
+    openedFile.close()
+    with open(WORD_LIST_FILE, "wb") as fp: 
+        pickle.dump(allWords, fp) # сохраняем
+vk_dataset()
 trans_data = transformation_data()
 save_my_dict(trans_data)
+gen_wordlist()
