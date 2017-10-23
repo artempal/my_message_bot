@@ -5,7 +5,7 @@ import re
 import numpy as np
 from transliterate import translit, get_available_language_codes
 import pickle
-
+import learning
 
 
 reload(sys)  
@@ -24,9 +24,8 @@ def vk_dataset():
     
     #login = raw_input('Введите логин: ')
     #password = raw_input('Введите пароль: ')
-    login = ''
-    password = ''
-    my_id = 136771035
+    login = '79212202676'
+    password = 'Nn4kN8uhnY9DbPljya02'
 
     vk_session = vk_api.VkApi(login, password)
 
@@ -35,8 +34,14 @@ def vk_dataset():
     except vk_api.AuthError as error_msg:
         print(error_msg)
         return
+    
+    vk = vk_session.get_api() # инструменты vk api
 
-    tools = vk_api.VkTools(vk_session)
+    response = vk.users.get() # получаем информацию пользователя
+    my_id = response[0]['id'] # достаем id пользователя
+
+
+    tools = vk_api.VkTools(vk_session) # дополнительные утилиты для массовой работы с vk api
 
     print 'Получаем диалоги...'
     dialogs = tools.get_all('messages.getDialogs', 200)
@@ -138,7 +143,10 @@ def gen_wordlist():
     openedFile.close()
     with open(WORD_LIST_FILE, "wb") as fp: 
         pickle.dump(allWords, fp) # сохраняем
+def learning():
+    learning.main()
 vk_dataset()
-trans_data = transformation_data()
-save_my_dict(trans_data)
-gen_wordlist()
+#trans_data = transformation_data()
+#save_my_dict(trans_data)
+#gen_wordlist()
+#learning()
