@@ -148,13 +148,19 @@ def get_test_string():
 				print('Строка пуста или в ней есть запрещенные символы')
 	return result_arr
 
+print('#############')
+print('Вас приветствует скрипт обучения бота')
+print('Введите несколько параметров')
+numIterations = int(raw_input('Cколько будем делать итераций: '))
+isLoad = int(raw_input('Введите 1 если хотите загрузить ранее сохраненную модель, 0 - если хотите создать новую: '))
+numSaveModel = int(raw_input('Через сколько итераций будем сохранять модель: '))
+print('#############')
 
 batchSize = 24
 maxDecoderLength = maxEncoderLength = 15 # Максиммальное количество слов в сообщении
 lstmUnits = 112
 embeddingDim = lstmUnits
 numLayersLSTM = 3
-numIterations = 500000
 
 encoderTestStrings = get_test_string() # Получаем массив строк с вопросами
 
@@ -201,10 +207,10 @@ optimizer = tf.train.AdamOptimizer(1e-4).minimize(loss)
 # Создаем сессию
 sess = tf.Session()
 saver = tf.train.Saver()
-# Можно загрузить ранее сохраненную модель
-#saver.restore(sess, tf.train.latest_checkpoint('models/'))
-# Или начать новую
-sess.run(tf.global_variables_initializer())
+if (isLoad == 1):
+	saver.restore(sess, tf.train.latest_checkpoint('models/')) # Можно загрузить ранее сохраненную модель
+else:
+	sess.run(tf.global_variables_initializer()) # Или начать новую
 
 # Cоздаем папку с новым логом и загружаем граф
 tf.summary.scalar('Loss', loss)
@@ -245,9 +251,9 @@ for i in range(numIterations):
 		try:
 			for word in responseList: sys.stdout.write(word.lower())
 		except Exception:
-			print(' ')
+			print('не знаю')
 		print('')
 		print('########')
 
-	if (i % 10000 == 0 and i != 0):
+	if (i % numSaveModel == 0 and i != 0):
 		savePath = saver.save(sess, "models/pretrained_seq2seq.ckpt", global_step=i)
