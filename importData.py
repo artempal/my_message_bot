@@ -5,7 +5,7 @@ import re
 import numpy as np
 from transliterate import translit, get_available_language_codes
 import pickle
-import learning
+import getpass
 
 
 reload(sys)  
@@ -20,14 +20,21 @@ WORD_LIST_FILE = 'wordList.txt'
 WINDOW_SIZE = 5
 REG_FILTER = re.compile(u'[^а-яА-Я ]') # фильтр сообщений - по умолчанию только русские символы и пробелы
 
+def auth_handler():
+    # Код двухфакторной аутентификации
+    key = input("Enter authentication code: ")
+    # Если: True - сохранить, False - не сохранять.
+    remember_device = True
+
+    return key, remember_device
+ 
+
 def vk_dataset():
     
-    #login = raw_input('Введите логин: ')
-    #password = raw_input('Введите пароль: ')
-    login = '79212202676'
-    password = 'Nn4kN8uhnY9DbPljya02'
+    login = raw_input('Введите логин: ')
+    password = getpass.getpass(prompt='Введите пароль: ')
 
-    vk_session = vk_api.VkApi(login, password)
+    vk_session = vk_api.VkApi(login, password, auth_handler=auth_handler)
 
     try:
         vk_session.auth()
@@ -42,15 +49,20 @@ def vk_dataset():
 
 
     tools = vk_api.VkTools(vk_session) # дополнительные утилиты для массовой работы с vk api
-
-    print 'Получаем диалоги...'
+    
+    
     dialogs = tools.get_all('messages.getDialogs', 200)
 
+    diaLimit = raw_input('Сколько будем получать диалогов? (если у вас много диалогов обучение может занять очень много времени) ')
+
+    print ('Получаем диалоги...')
     # Получаем все id пользователей, с которыми переписывались
     all_user_id = []
     for dialog in dialogs['items']:
         if (dialog['message']['user_id']) > 0: # если это человек, а не сообщество
             all_user_id.append(dialog['message']['user_id']) # добавляем в массив
+        if(len(all_user_id) == int(diaLimit)):
+            break
 
     data_file = open(DATA_FILE,'w')
 
@@ -78,8 +90,6 @@ def clean_message(message_body):
     message_body = re.sub(r'\s+', ' ', message_body) # удалим лишние пробелы внутри
     message_body = translit(message_body,'ru',reversed=True) #делаем транслитерацию
     return message_body
-
-
 
 def transformation_data():
     print 'Начинаем обработку сообщений...'
@@ -143,10 +153,20 @@ def gen_wordlist():
     openedFile.close()
     with open(WORD_LIST_FILE, "wb") as fp: 
         pickle.dump(allWords, fp) # сохраняем
-def learning():
-    learning.main()
-vk_dataset()
-#trans_data = transformation_data()
-#save_my_dict(trans_data)
-#gen_wordlist()
-#learning()
+
+print('###################')
+print('Вы успешно запустили утилиту, которая поможет скачать вам диалоги из ВК')
+print('и обработать данные для обучения своего бота')
+print('Введите логин и пароль от социальной сети vk.com (поддерживается двухфакторная авторизация)')
+print('Внимание! Авторизация проходит напрямую, поэтому ваши данные не попадут третьим лицам')
+try:
+    vk_dataset()
+    trans_data = transformation_data()
+    save_my_dict(trans_data)
+    gen_wordlist()
+except Exception:
+    print('###################')
+    print('При выполнении возникли ошибки!') 
+else:
+    print('###################')
+    print('Готово! Запустите скрипт python training.py')
